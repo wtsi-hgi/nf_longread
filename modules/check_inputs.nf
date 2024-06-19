@@ -25,8 +25,6 @@ workflow check_inputs
     cat_reads(ch_sample_sheet)
     ch_cat_out = cat_reads.out.cat_out
 
-    index_ref(ch_cat_out)
-
     emit:
     ch_cat_out
 }
@@ -58,23 +56,5 @@ process cat_reads
 
     cat ${input_file}/*.fastq.gz > ${group}.fastq.gz
     cp ${fasta} ${group}.ref.fasta
-    """
-}
-
-process index_ref
-{
-    label 'process_single'
-
-    publishDir "${params.outdir}/mergedReads", mode: "copy", overwrite: true
-
-    input:
-    tuple val(group), path(fastq), path(fasta)
-
-    output:
-    path("${group}.ref.fasta.fai"), emit: ref_fai
-
-    script:
-    """
-    samtools faidx ${fasta}
     """
 }

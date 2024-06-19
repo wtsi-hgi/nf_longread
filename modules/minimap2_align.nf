@@ -16,8 +16,8 @@ workflow minimap2_align
     ch_sample
 
     main:
-    index_reference(ch_sample)
-    ch_ref_mmi = index_reference.out.ref_mmi
+    index_mmi(ch_sample)
+    ch_ref_mmi = index_mmi.out.ref_mmi
 
     align_reads(ch_sample, ch_ref_mmi)
     ch_sam = align_reads.out.sam
@@ -35,7 +35,7 @@ workflow minimap2_align
 #~~~~~~~~~#
 */
 
-process index_reference
+process index_mmi
 {
     label 'process_high'
 

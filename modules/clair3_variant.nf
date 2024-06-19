@@ -17,7 +17,9 @@ workflow clair3_variant
     ch_bam
 
     main:
-    clair3_call(ch_sample, ch_bam)
+    ch_fai = index_fai(ch_sample)
+
+    clair3_call(ch_sample, ch_bam, ch_fai)
     ch_vcf = clair3_call.out.vcf
 
     emit:
@@ -31,13 +33,32 @@ workflow clair3_variant
 #~~~~~~~~~#
 */
 
+process index_fai
+{
+    label 'process_single'
+
+    input:
+    tuple val(group), path(fastq), path(fasta)
+
+    output:
+    path("${group}.ref.fasta"), emit: ref_fai
+
+    script:
+    """
+    samtools faidx ${fasta}
+    """
+}
+
 process clair3_call
 {
     label 'process_high'
 
+    publishDir "${params.outdir}/vcfFiles", mode: "copy", overwrite: true
+
     input:
     tuple val(group), path(fastq), path(fasta)
     path bam
+    path reference
 
     output:
     tuple path("clair3/${group}.vcf.gz"), path("clair3/${group}.vcf.gz.tbi"), emit: vcf
@@ -74,7 +95,7 @@ process clair3_call
 
     """
     run_clair3.sh -b ${bam} \
-                  -f ${fasta}} \
+                  -f ${reference} \
                   -m ${model_path} \
                   -t $task.cpus \
                   -p ${platform} \
