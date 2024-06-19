@@ -22,7 +22,8 @@ workflow minimap2_align
     align_reads(ch_sample, ch_ref_mmi)
     ch_sam = align_reads.out.sam
 
-    samtools_view_bam(ch_sample, ch_sam)
+    ch_group = ch_sample.map { group, fastq, fasta -> group }
+    samtools_view_bam(ch_group, ch_sam)
     ch_bam = samtools_view_bam.out.bam
 
     emit:
@@ -127,7 +128,7 @@ process samtools_view_bam
     publishDir "${params.outdir}/bamFiles", mode: "copy", overwrite: true
 
     input:
-    tuple val(group), path(fastq), path(fasta)
+    val group
     path sam
 
     output:

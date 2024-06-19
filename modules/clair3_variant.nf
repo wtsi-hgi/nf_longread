@@ -17,9 +17,12 @@ workflow clair3_variant
     ch_bam
 
     main:
-    ch_fai = index_fai(ch_sample)
+    ch_fasta = ch_sample.map { group, fastq, fasta -> fasta }
+    index_fai(ch_fasta)
+    ch_fai = index_fai.out.ref_fai
 
-    clair3_call(ch_sample, ch_bam, ch_fai)
+    ch_group = ch_sample.map { group, fastq, fasta -> group }
+    clair3_call(ch_group, ch_bam, ch_fai)
     ch_vcf = clair3_call.out.vcf
 
     emit:
@@ -38,10 +41,10 @@ process index_fai
     label 'process_single'
 
     input:
-    tuple val(group), path(fastq), path(fasta)
+    path fasta
 
     output:
-    path("${group}.ref.fasta"), emit: ref_fai
+    tuple path("${fasta}"), path("${fasta}.fai"), emit: ref_fai
 
     script:
     """
@@ -56,12 +59,12 @@ process clair3_call
     publishDir "${params.outdir}/vcfFiles", mode: "copy", overwrite: true
 
     input:
-    tuple val(group), path(fastq), path(fasta)
-    path bam
-    path reference
+    val group
+    tuple path(bam), path(bai)
+    tuple path(fasta), path(fai)
 
     output:
-    tuple path("clair3/${group}.vcf.gz"), path("clair3/${group}.vcf.gz.tbi"), emit: vcf
+    tuple path("clair3_outs/${group}.vcf.gz"), path("clair3_outs/${group}.vcf.gz.tbi"), emit: vcf
 
     script:
     def platform = ''
@@ -95,11 +98,12 @@ process clair3_call
 
     """
     run_clair3.sh -b ${bam} \
-                  -f ${reference} \
+                  -f ${fasta} \
                   -m ${model_path} \
                   -t $task.cpus \
                   -p ${platform} \
                   -o clair3_outs \
+                  --no_phasing_for_fa \
                   --include_all_ctgs
 
     mv clair3_outs/merge_output.vcf.gz clair3_outs/${group}.vcf.gz
