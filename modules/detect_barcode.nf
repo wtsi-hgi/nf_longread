@@ -96,7 +96,7 @@ process samtools_stat {
 process extract_barcode {
     label 'process_single'
 
-    publishDir "${params.outdir}/barcodeList", mode: "copy", overwrite: true
+    publishDir "${params.outdir}/barcodeList/${group}", mode: "copy", overwrite: true
 
     input:
     tuple val(group), path(fastq), path(fasta), 
