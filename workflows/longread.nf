@@ -10,8 +10,7 @@
 #~~~~~~~~~~~~~~~~~~#
 */
 
-def helpMessage()
-{
+def helpMessage() {
     log.info """
     Usage:
     nextflow run check_inputs.nf --sample_sheet "/path/of/sample/sheet"
@@ -20,14 +19,23 @@ def helpMessage()
         --sample_sheet        Path of the sample sheet
     
     Optional arguments:
+    Basic:
         --outdir              the directory path of output results, default: the current directory
+    
+    Alignment:
         --protocol            DNA, cDNA, directRNA, default: DNA
         --platform            nanopore, pacbio, hifi, default: nanopore
+    
+    Variant Calling:
         --model               the trainning model of variant calling, default: ont_r10
+    
+    Barcode Detection:
+        --mapq                the mapping quality for filtering, default: 1
 
     Step arguments:
         --skip_align          skip alignment
         --skip_variant        skip variant calling
+        --skip_barcode        skip barcode detection
     """
 }
 
@@ -37,14 +45,12 @@ def helpMessage()
 #~~~~~~~~~~~~~~~~~~#
 */
 params.help = null
-if(params.help)
-{
+if(params.help) {
     helpMessage()
     exit 0
 }
 
-if (params.sample_sheet)
-{
+if (params.sample_sheet) {
     ch_input = file(params.sample_sheet)
 } else {
     helpMessage()
@@ -55,29 +61,34 @@ if (params.sample_sheet)
 params.outdir = params.outdir ?: "$PWD"
 
 params.protocol = params.protocol ?: 'DNA'
-if (params.protocol != 'DNA' && params.protocol != 'cDNA' && params.protocol != 'directRNA')
-{
+if (params.protocol != 'DNA' && params.protocol != 'cDNA' && params.protocol != 'directRNA') {
     exit 1, "Invalid protocol option: ${params.protocol}. Valid options: 'DNA', 'cDNA', 'directRNA'"
 }
 
 params.platform = params.platform ?: 'nanopore'
-if (params.platform != 'nanopore' && params.platform != 'pacbio' && params.platform != 'hifi')
-{
+if (params.platform != 'nanopore' && params.platform != 'pacbio' && params.platform != 'hifi') {
     exit 1, "Invalid protocol option: ${params.platform}. Valid options: 'nanopore', 'pacbio', 'hifi'"
 }
+
+params.model = params.model ?: 'ont_r10'
 
 params.skip_align = params.skip_align ?: false
 
 params.skip_variant = params.skip_variant ?: false
-if (!params.skip_variant)
-{
-    if(params.skip_align)
-    {
-        exit 1, "Cannot run variant calling with skipping alignment!"
+if (!params.skip_variant) {
+    if(params.skip_align) {
+        exit 1, "Cannot run variant calling with --skip_align!"
     }
 }
 
-params.model = params.model ?: 'ont_r10'
+params.skip_barcode = params.skip_barcode ?: false
+if (!params.skip_barcode) {
+    if(params.skip_align) {
+        exit 1, "Cannot run barcode detection with --skip_align!"
+    }
+}
+
+params.mapq = params.mapq ?: 1
 
 /*
 #~~~~~~~~~~~~~~#
@@ -87,6 +98,7 @@ params.model = params.model ?: 'ont_r10'
 include { check_inputs } from '../modules/check_inputs.nf'
 include { minimap2_align } from '../modules/minimap2_align.nf'
 include { clair3_variant } from '../modules/clair3_variant.nf'
+include { detect_barcode } from '../modules/detect_barcode.nf'
 
 /*
 #~~~~~~~~~~#
@@ -94,19 +106,26 @@ include { clair3_variant } from '../modules/clair3_variant.nf'
 #~~~~~~~~~~#
 */
 
-workflow longread
-{
+workflow longread {
     check_inputs(ch_input)
-        .set{ ch_sample }
+    ch_sample = check_inputs.out.ch_cat_out
+    ch_barcode = check_inputs.out.ch_barcode
 
-    if (!params.skip_align)
-    {
+    if (!params.skip_align) {
         minimap2_align(ch_sample)
-            .set{ ch_bam }
+        ch_bam = minimap2_align.out.ch_bam
 
-        if (!params.skip_variant)
-        {
+        if (!params.skip_variant) {
             clair3_variant(ch_sample, ch_bam)
+        }
+
+        if (!params.skip_barcode) {
+            ch_validated_barcode = ch_barcode.map { group, barcode_start, barcode_end, barcode_template ->
+                if (!barcode_start || !barcode_end) { error "Error: barcode_start or barcode_end is empty. Barcode detection cannot proceed." }
+                return tuple(group, barcode_start, barcode_end, barcode_template)
+            }
+
+            detect_barcode(ch_sample, ch_validated_barcode, ch_bam)
         }
     }
 }

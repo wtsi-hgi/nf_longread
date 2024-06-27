@@ -4,7 +4,6 @@ nextflow.enable.dsl = 2
 
 include { longread } from './workflows/longread.nf'
 
-workflow
-{
+workflow {
     longread()
 }

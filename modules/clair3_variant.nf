@@ -10,19 +10,19 @@
 #~~~~~~~~~~#
 */
 
-workflow clair3_variant
-{
+workflow clair3_variant {
     take:
     ch_sample
     ch_bam
 
     main:
-    ch_fasta = ch_sample.map { group, fastq, fasta -> fasta }
+    ch_fasta = ch_sample.map { group, fastq, fasta -> [group, fasta] }
     index_fai(ch_fasta)
     ch_fai = index_fai.out.ref_fai
 
-    ch_group = ch_sample.map { group, fastq, fasta -> group }
-    clair3_call(ch_group, ch_bam, ch_fai)
+    ch_joined = ch_bam.join(ch_fai)
+
+    clair3_call(ch_joined)
     ch_vcf = clair3_call.out.vcf
 
     emit:
@@ -36,15 +36,14 @@ workflow clair3_variant
 #~~~~~~~~~#
 */
 
-process index_fai
-{
+process index_fai {
     label 'process_single'
 
     input:
-    path fasta
+    tuple val(group), path(fasta)
 
     output:
-    tuple path("${fasta}"), path("${fasta}.fai"), emit: ref_fai
+    tuple val(group), path("${fasta}"), path("${fasta}.fai"), emit: ref_fai
 
     script:
     """
@@ -52,26 +51,22 @@ process index_fai
     """
 }
 
-process clair3_call
-{
+process clair3_call {
     label 'process_high'
 
     publishDir "${params.outdir}/vcfFiles", mode: "copy", overwrite: true
 
     input:
-    val group
-    tuple path(bam), path(bai)
-    tuple path(fasta), path(fai)
+    tuple val(group), path(bam), path(bai), path(fasta), path(fai)
 
     output:
-    tuple path("clair3_outs/${group}.vcf.gz"), path("clair3_outs/${group}.vcf.gz.tbi"), emit: vcf
+    tuple val(group), path("clair3_outs/${group}.vcf.gz"), path("clair3_outs/${group}.vcf.gz.tbi"), emit: vcf
 
     script:
     def platform = ''
     def model_path = ''
 
-    switch (params.platform)
-    {
+    switch (params.platform) {
         case 'nanopore':
             platform = "ont"
             break
@@ -83,8 +78,7 @@ process clair3_call
             break
     }
 
-    switch (params.model)
-    {
+    switch (params.model) {
         case 'ont_r10':
             model_path = "${projectDir}/resources/r1041_e82_400bps_sup_v420"
             break
