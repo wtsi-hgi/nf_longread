@@ -30,11 +30,11 @@ clair3
 <a id="samplesheet"></a>
 
 ### Sample sheet -- tsv
-| group | replicate | barcode | input_file | fasta | gtf |
+| group | barcode_start | barcode_end | input_file | fasta | gtf |
 | - | - | - | - | - | - |
-| barcode_55 | 1 | | /path/of/fastq/directory/55 | /path/of/fasta/reference_55.fa | | 
-| barcode_56 | 1 | | /path/of/fastq/directory/56 | /path/of/fasta/reference_56.fa | | 
-| barcode_57 | 1 | | /path/of/fastq/directory/57 | /path/of/fasta/reference_57.fa | | 
+| barcode_55 | | | /path/of/fastq/directory/55 | /path/of/fasta/reference_55.fa | | 
+| barcode_56 | | | /path/of/fastq/directory/56 | /path/of/fasta/reference_56.fa | | 
+| barcode_57 | | | /path/of/fastq/directory/57 | /path/of/fasta/reference_57.fa | | 
 
 <a id="structure"></a>
 
