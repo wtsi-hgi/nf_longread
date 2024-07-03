@@ -100,7 +100,13 @@ process clair3_call {
                   --no_phasing_for_fa \
                   --include_all_ctgs
 
-    mv clair3_outs/merge_output.vcf.gz clair3_outs/${group}.vcf.gz
-    mv clair3_outs/merge_output.vcf.gz.tbi clair3_outs/${group}.vcf.gz.tbi
+    if ls clair3_outs/merge_output.vcf.gz &> /dev/null
+    then
+        mv clair3_outs/merge_output.vcf.gz clair3_outs/${group}.vcf.gz
+        mv clair3_outs/merge_output.vcf.gz.tbi clair3_outs/${group}.vcf.gz.tbi
+    else
+        echo "No variant found!"
+    fi
+
     """
 }
