@@ -103,10 +103,15 @@ process clair3_call {
     if ls clair3_outs/merge_output.vcf.gz &> /dev/null
     then
         mv clair3_outs/merge_output.vcf.gz clair3_outs/${group}.vcf.gz
-        mv clair3_outs/merge_output.vcf.gz.tbi clair3_outs/${group}.vcf.gz.tbi
     else
         echo "No variant found!"
     fi
 
+    if ls clair3_outs/merge_output.vcf.gz.tbi &> /dev/null
+    then
+        mv clair3_outs/merge_output.vcf.gz.tbi clair3_outs/${group}.vcf.gz.tbi
+    else
+        echo "No index tbi found!"
+    fi
     """
 }
