@@ -114,6 +114,10 @@ process extract_barcode {
         barcode_opt = "-b ${sequence}"
     }
 
+    if (start == null || start.toString().trim() == "" || end == null || end.toString().trim() == "") {
+        throw new IllegalArgumentException("Error: start or end is empty for group: ${group}")
+    }
+    
     """
     awk '{if(\$1==">${target}"){print \$0; getline; print \$0; exit}}' ${fasta} > ${target}.fa
     samtools faidx ${target}.fa
