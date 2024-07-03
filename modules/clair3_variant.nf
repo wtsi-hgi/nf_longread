@@ -60,7 +60,7 @@ process clair3_call {
     tuple val(group), path(bam), path(bai), path(fasta), path(fai)
 
     output:
-    tuple val(group), path("clair3_outs/${group}.vcf.gz"), path("clair3_outs/${group}.vcf.gz.tbi"), emit: vcf
+    tuple val(group), path("clair3_outs/${group}.vcf.gz"), emit: vcf
 
     script:
     def platform = ''
@@ -105,13 +105,6 @@ process clair3_call {
         mv clair3_outs/merge_output.vcf.gz clair3_outs/${group}.vcf.gz
     else
         echo "No variant found!"
-    fi
-
-    if ls clair3_outs/merge_output.vcf.gz.tbi &> /dev/null
-    then
-        mv clair3_outs/merge_output.vcf.gz.tbi clair3_outs/${group}.vcf.gz.tbi
-    else
-        echo "No index tbi found!"
     fi
     """
 }
