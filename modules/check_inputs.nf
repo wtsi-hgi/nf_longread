@@ -27,7 +27,13 @@ workflow check_inputs {
     Channel
         .fromPath(sample_sheet, checkIfExists: true)
         .splitCsv(header:true, sep:",")
-        .map { row -> tuple(row.group.toString(), row.barcode_start.toInteger(), row.barcode_end.toInteger(), row.barcode_template.toString()) }
+        .map { row -> 
+            def group = row.group.toString()
+            def barcode_start = row.barcode_start ? row.barcode_start.toInteger() : null
+            def barcode_end = row.barcode_end ? row.barcode_end.toInteger() : null
+            def barcode_template = row.barcode_template?.toString()
+            tuple(group, barcode_start, barcode_end, barcode_template) 
+        }
         .set { ch_barcode }
 
     emit:
