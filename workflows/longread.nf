@@ -36,7 +36,7 @@ def helpMessage() {
         --skip_align          skip alignment
         --skip_variant        skip variant calling
         --skip_barcode        skip barcode detection
-        --skip_snpcov         skip snp coverage extraction
+        --skip_snvcov         skip snv coverage extraction
     """
 }
 
@@ -91,10 +91,10 @@ if (!params.skip_barcode) {
     }
 }
 
-params.skip_snpcov = params.skip_snpcov ?: false
-if (!params.skip_snpcov) {
+params.skip_snvcov = params.skip_snvcov ?: false
+if (!params.skip_snvcov) {
     if(params.skip_align) {
-        exit 1, "Cannot run snp coverage extraction with --skip_align!"
+        exit 1, "Cannot run snv coverage extraction with --skip_align!"
     }
 }
 /*
@@ -106,7 +106,7 @@ include { check_inputs } from '../modules/check_inputs.nf'
 include { minimap2_align } from '../modules/minimap2_align.nf'
 include { clair3_variant } from '../modules/clair3_variant.nf'
 include { detect_barcode } from '../modules/detect_barcode.nf'
-include { extract_snps } from '../modules/extract_snps.nf'
+include { extract_snvs } from '../modules/extract_snvs.nf'
 
 /*
 #~~~~~~~~~~#
@@ -136,8 +136,8 @@ workflow longread {
             detect_barcode(ch_sample, ch_validated_barcode, ch_bam)
         }
 
-        if (!params.skip_snpcov) {
-            extract_snps(ch_sample, ch_bam)
+        if (!params.skip_snvcov) {
+            extract_snvs(ch_sample, ch_bam)
         }
     }
 }

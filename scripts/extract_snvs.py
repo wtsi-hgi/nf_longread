@@ -25,6 +25,7 @@ Arguments:
 \t-o, --outputdir       output directory
 
 Optional:
+\t-b, --basequal        the minimum quality score of a base
 \t-p, --prefix          output prefix
 
 Flags:
@@ -43,7 +44,7 @@ def usage_info():
     versions()
     print(readME)
 
-def get_snps(cigar_str: str, md_tag: str, mapping_start: int, read_seq: str):
+def get_snvs(cigar_str: str, md_tag: str, mapping_start: int, read_seq: str, read_qual: str):
     parts_cigar = re.findall(r'(\d+|[A-Z])', cigar_str)
     parts_md = re.findall(r'(\d+|[A-Z]|\^[A-Z]+)', md_tag)
 
@@ -67,7 +68,7 @@ def get_snps(cigar_str: str, md_tag: str, mapping_start: int, read_seq: str):
 
     read_pos = first_softclip_end
     map_pos = mapping_start
-    snps = []
+    snvs = []
     for md in parts_md:
         if md.isdigit():
             read_pos = read_pos + int(md)
@@ -76,11 +77,11 @@ def get_snps(cigar_str: str, md_tag: str, mapping_start: int, read_seq: str):
         elif md.isalpha():
             read_pos = read_pos + 1
             map_pos = map_pos + 1
-            snps.append((map_pos, md, read_seq[read_pos-1]))
+            snvs.append((map_pos, md, read_seq[read_pos-1], read_qual[read_pos-1]))
         elif md.startswith('^'):
             map_pos = map_pos + len(md) - 1
 
-    return snps
+    return snvs
 
 def adjust_read_pos(read_pos: int, insertion_ranges: list):
     if insertion_ranges:
@@ -156,12 +157,13 @@ def plot_frequency(cov_file: str, png_file: str):
 def main(argvs):
     inputFile = ''
     outputDir = ''
+    basequal = 30
     outputPrefix = ''
 
     try:
         opts, args = getopt.getopt(argvs,
-                                   "vhi:o:p:",
-                                   ["version", "help", "input=", "outputdir=", "prefix="])
+                                   "vhi:o:b:p:",
+                                   ["version", "help", "input=", "outputdir=", "basequal=", "prefix="])
         if len(opts) == 0:
             usage_info()
             sys.exit(2)
@@ -181,6 +183,8 @@ def main(argvs):
             inputFile = arg
         elif opt in ("-o", "--outputdir"):
             outputDir = arg
+        elif opt in ("-b", "--basequal"):
+            basequal = arg
         elif opt in ("-p", "--prefix"):
             outputPrefix = arg
         else:
@@ -198,37 +202,42 @@ def main(argvs):
     # open bam
     bam = pysam.AlignmentFile(inputFile, "rb")
 
-    # collect all the snps in all the reads
-    all_snps = []
+    # collect all the snvs in all the reads
+    all_snvs = []
     chr_id = bam.references[0]
     for record in bam:
         if record.has_tag("MD"):
-            all_snps.append(get_snps(record.cigarstring, record.get_tag("MD"), record.reference_start, record.query_sequence))
+            all_snvs.append(get_snvs(record.cigarstring, 
+                                     record.get_tag("MD"), 
+                                     record.reference_start, 
+                                     record.query_sequence,
+                                     record.query_qualities))
 
-    # collect all the genomic positions of all the snps
-    all_snps_uniq = list(set(list(chain.from_iterable(all_snps))))
-    all_refs_uniq = [(item[0], item[1]) for item in all_snps_uniq]
+    # collect all the genomic positions of all the snvs
+    all_snvs_uniq = list(set(list(chain.from_iterable(all_snvs))))
+    all_refs_uniq = [(item[0], item[1]) for item in all_snvs_uniq]
     all_refs_uniq = list(set(all_refs_uniq))
     all_refs_uniq.sort(key=lambda x: x[0])
 
-    # collect all the coverages of all the snps
-    snps_cov = []
+    # collect all the coverages of all the snvs
+    snvs_cov = []
     for pos, ref in all_refs_uniq:
-        snp_cov = bam.count_coverage(chr_id, pos-1, pos, quality_threshold=0)
-        snps_cov.append([cov[0] for cov in snp_cov])
-    all_snps_uniq_cov = dict(zip(all_refs_uniq, snps_cov))
+        # quality_threshold is the minimum quality score (in phred) a base has to reach to be counted.
+        snv_cov = bam.count_coverage(chr_id, pos-1, pos, quality_threshold=basequal)
+        snvs_cov.append([cov[0] for cov in snv_cov])
+    all_snvs_uniq_cov = dict(zip(all_refs_uniq, snvs_cov))
 
     # close bam
     bam.close()
 
-    outputFile = outputDir + "/" + outputPrefix + ".snp_cov.txt"
+    outputFile = outputDir + "/" + outputPrefix + ".snv_cov.txt"
     with open(outputFile, 'w') as file:
         file.write("pos\tref\tA\tC\tG\tT\n")
-        for key, value in all_snps_uniq_cov.items():
+        for key, value in all_snvs_uniq_cov.items():
             line = f"{key[0]}\t{key[1]}\t" + "\t".join(map(str, value))
             file.write(line + "\n")
 
-    pngFile = outputDir + "/" + outputPrefix + ".snp_cov.png"
+    pngFile = outputDir + "/" + outputPrefix + ".snv_cov.png"
     plot_frequency(outputFile, pngFile)
 
 ###############

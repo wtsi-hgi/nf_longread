@@ -29,12 +29,12 @@ clair3
 
 <a id="samplesheet"></a>
 
-### Sample sheet -- tsv
-| group | barcode_start | barcode_end | input_file | fasta | gtf |
+### Sample sheet -- csv
+| group | barcode_start | barcode_end | barcode_template | fastq | fasta |
 | - | - | - | - | - | - |
-| barcode_55 | | | /path/of/fastq/directory/55 | /path/of/fasta/reference_55.fa | | 
-| barcode_56 | | | /path/of/fastq/directory/56 | /path/of/fasta/reference_56.fa | | 
-| barcode_57 | | | /path/of/fastq/directory/57 | /path/of/fasta/reference_57.fa | | 
+| barcode_55 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/fastq/directory/55 | /path/of/fasta/reference_55.fa |
+| barcode_56 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/fastq/directory/56 | /path/of/fasta/reference_56.fa | 
+| barcode_57 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/fastq/directory/57 | /path/of/fasta/reference_57.fa | 
 
 <a id="structure"></a>
 
@@ -59,7 +59,7 @@ submit the bash script below
 
 # modules
 module load HGI/common/nextflow/23.10.0
-module load HGI/softpack/users/xh4/longread_dms
+module load HGI/softpack/groups/team354/nf_longread
 module load HGI/common/clair3
 
 #--------------#
@@ -79,12 +79,6 @@ nextflow run -resume nf_longread/main.nf --sample_sheet $INPUTSAMPLE \
                                          --protocol DNA \
                                          --platform nanopore \
                                          --outdir $OUTPUTRES
-
-# don't delete codes below if you'd like to re-run the broken job
-status=$?
-if [[ $status -eq 0 ]]; then
-    rm -r /lustre/scratch123/hgi/teams/hgi/fs18/longread_alignment/work
-fi
 ```
 
 <a id="options"></a>
@@ -98,12 +92,22 @@ Usage:
         --sample_sheet        Path of the sample sheet
     
     Optional arguments:
+    Basic:
         --outdir              the directory path of output results, default: the current directory
+    
+    Alignment:
         --protocol            DNA, cDNA, directRNA, default: DNA
         --platform            nanopore, pacbio, hifi, default: nanopore
+    
+    Variant Calling:
         --model               the trainning model of variant calling, default: ont_r10
+    
+    Barcode Detection:
+        --mapq                the mapping quality for filtering, default: 1
 
     Step arguments:
         --skip_align          skip alignment
         --skip_variant        skip variant calling
+        --skip_barcode        skip barcode detection
+        --skip_snvcov         skip snv coverage extraction
 ```
