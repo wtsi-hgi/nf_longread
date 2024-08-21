@@ -25,7 +25,8 @@ Arguments:
 \t-o, --outputdir       output directory
 
 Optional:
-\t-b, --basequal        the minimum quality score of a base
+\t-b, --basequal        the minimum quality score of a base, eg: 30, default: 30
+\t-r, --region          the expected variant region, eg: 100,200, default: 0,0
 \t-p, --prefix          output prefix
 
 Flags:
@@ -93,7 +94,7 @@ def adjust_read_pos(read_pos: int, insertion_ranges: list):
     else:
         return read_pos
 
-def plot_frequency(cov_file: str, png_file: str):
+def plot_frequency(cov_file: str, png_file: str, var_region: str):
     df = pd.read_csv(cov_file, sep = '\t', header = 0)
 
     positions = df['pos'].tolist()
@@ -110,7 +111,9 @@ def plot_frequency(cov_file: str, png_file: str):
     G_pct = G_freq / total_counts * 100
     T_pct = T_freq / total_counts * 100
 
-    heatmap_data = np.array([A_pct, C_pct, G_pct, T_pct])
+    total_pct = [a + t + c + g for a, t, c, g in zip(A_pct, T_pct, C_pct, G_pct)]
+
+    heatmap_data = np.array([total_pct, A_pct, C_pct, G_pct, T_pct])
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(50, 10), sharex=True)
 
@@ -138,9 +141,22 @@ def plot_frequency(cov_file: str, png_file: str):
     # Customize the plot
     ax2.set_xticks(np.arange(len(positions)))
     ax2.set_xticklabels(positions, rotation=90, fontsize=8)
-    ax2.set_yticks(np.arange(4))
-    ax2.set_yticklabels(['A', 'C', 'G', 'T'], fontsize=16)
+    ax2.set_yticks(np.arange(5))
+    ax2.set_yticklabels(['Total', 'A', 'C', 'G', 'T'], fontsize=16)
     ax2.set_title('Percentage of Nucleotides (A, C, G, T) excluding Ref by Position', fontsize=16)
+
+    [region_start, region_end] = var_region.split(',')
+    region_start = int(region_start)
+    region_end = int(region_end)
+    if (region_start != 0 | region_end != 0) & (region_start < region_end):
+        region_start_idx = 0
+        region_end_idx = 0
+        for index, pos in enumerate(positions):
+            if region_start >= pos:
+                region_start_idx = index
+            if region_end >= pos:
+                region_end_idx = index
+        ax2.axvspan(region_start_idx, region_end_idx, color = 'grey', alpha = 0.2)
 
     # Add colorbar
     cbar = fig.colorbar(im, ax=ax2, orientation='horizontal', pad=0.2)
@@ -157,13 +173,14 @@ def plot_frequency(cov_file: str, png_file: str):
 def main(argvs):
     inputFile = ''
     outputDir = ''
-    basequal = 30
+    baseQual = 30
+    varRegion = "0,0"
     outputPrefix = ''
 
     try:
         opts, args = getopt.getopt(argvs,
-                                   "vhi:o:b:p:",
-                                   ["version", "help", "input=", "outputdir=", "basequal=", "prefix="])
+                                   "vhi:o:b:r:p:",
+                                   ["version", "help", "input=", "outputdir=", "basequal=", "region=", "prefix="])
         if len(opts) == 0:
             usage_info()
             sys.exit(2)
@@ -184,7 +201,9 @@ def main(argvs):
         elif opt in ("-o", "--outputdir"):
             outputDir = arg
         elif opt in ("-b", "--basequal"):
-            basequal = arg
+            baseQual = arg
+        elif opt in ("-r", "--region"):
+            varRegion = arg            
         elif opt in ("-p", "--prefix"):
             outputPrefix = arg
         else:
@@ -223,7 +242,7 @@ def main(argvs):
     snvs_cov = []
     for pos, ref in all_refs_uniq:
         # quality_threshold is the minimum quality score (in phred) a base has to reach to be counted.
-        snv_cov = bam.count_coverage(chr_id, pos-1, pos, quality_threshold=basequal)
+        snv_cov = bam.count_coverage(chr_id, pos-1, pos, quality_threshold=int(baseQual))
         snvs_cov.append([cov[0] for cov in snv_cov])
     all_snvs_uniq_cov = dict(zip(all_refs_uniq, snvs_cov))
 
@@ -238,7 +257,7 @@ def main(argvs):
             file.write(line + "\n")
 
     pngFile = outputDir + "/" + outputPrefix + ".snv_cov.png"
-    plot_frequency(outputFile, pngFile)
+    plot_frequency(outputFile, pngFile, varRegion)
 
 ###############
 # program run #

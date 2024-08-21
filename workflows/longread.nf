@@ -32,6 +32,10 @@ def helpMessage() {
     Barcode Detection:
         --mapq                the mapping quality for filtering, default: 1
 
+    Extract SNVs:
+        --basequal            the base quality for filtering, default: 30
+        --region              the expected region of variants, eg: 100,200, default: null,null
+
     Step arguments:
         --skip_align          skip alignment
         --skip_variant        skip variant calling
@@ -59,39 +63,39 @@ if (params.sample_sheet) {
     exit 1
 }
 
-params.outdir = params.outdir ?: "$PWD"
+params.outdir       = params.outdir       ?: "$PWD"
+params.protocol     = params.protocol     ?: "DNA"
+params.platform     = params.platform     ?: "nanopore"
+params.model        = params.model        ?: "ont_r10"
+params.mapq         = params.mapq         ?: 1
+params.basequal     = params.basequal     ?: 30
+params.region       = params.region       ?: "0,0"
 
-params.protocol = params.protocol ?: 'DNA'
+params.skip_align   = params.skip_align   ?: false
+params.skip_variant = params.skip_variant ?: false
+params.skip_barcode = params.skip_barcode ?: false
+params.skip_snvcov  = params.skip_snvcov  ?: false
+
 if (params.protocol != 'DNA' && params.protocol != 'cDNA' && params.protocol != 'directRNA') {
     exit 1, "Invalid protocol option: ${params.protocol}. Valid options: 'DNA', 'cDNA', 'directRNA'"
 }
 
-params.platform = params.platform ?: 'nanopore'
 if (params.platform != 'nanopore' && params.platform != 'pacbio' && params.platform != 'hifi') {
     exit 1, "Invalid protocol option: ${params.platform}. Valid options: 'nanopore', 'pacbio', 'hifi'"
 }
 
-params.model = params.model ?: 'ont_r10'
-
-params.skip_align = params.skip_align ?: false
-
-params.mapq = params.mapq ?: 1
-
-params.skip_variant = params.skip_variant ?: false
 if (!params.skip_variant) {
     if(params.skip_align) {
         exit 1, "Cannot run variant calling with --skip_align!"
     }
 }
 
-params.skip_barcode = params.skip_barcode ?: false
 if (!params.skip_barcode) {
     if(params.skip_align) {
         exit 1, "Cannot run barcode detection with --skip_align!"
     }
 }
 
-params.skip_snvcov = params.skip_snvcov ?: false
 if (!params.skip_snvcov) {
     if(params.skip_align) {
         exit 1, "Cannot run snv coverage extraction with --skip_align!"

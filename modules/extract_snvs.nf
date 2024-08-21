@@ -67,6 +67,6 @@ process get_snvs {
 
     script:  
     """
-    python ${projectDir}/scripts/extract_snvs.py -i ${bam} -o .
+    python ${projectDir}/scripts/extract_snvs.py -i ${bam} -o . -b ${params.basequal} -r ${params.region}
     """ 
 }
