@@ -156,7 +156,7 @@ def plot_frequency(cov_file: str, png_file: str, var_region: str):
                 region_start_idx = index
             if region_end >= pos:
                 region_end_idx = index
-        ax2.axvspan(region_start_idx, region_end_idx, color = 'grey', alpha = 0.2)
+        ax2.axvspan(region_start_idx + 1, region_end_idx + 1, color = 'grey', alpha = 0.2)
 
     # Add colorbar
     cbar = fig.colorbar(im, ax=ax2, orientation='horizontal', pad=0.2)
