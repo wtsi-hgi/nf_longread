@@ -34,7 +34,7 @@ def helpMessage() {
 
     Extract SNVs:
         --basequal            the base quality for filtering, default: 30
-        --region              the expected region of variants, eg: 100,200, default: null,null
+        --region              the expected region of variants, eg: 100,200, default: 0,0
 
     Step arguments:
         --skip_align          skip alignment
