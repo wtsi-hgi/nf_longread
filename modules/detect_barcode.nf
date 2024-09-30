@@ -105,7 +105,8 @@ process extract_barcode {
           val(target), val(length), val(reads)
 
     output:
-    path "${target}.barcodes.txt", emit: ch_list
+    path "${target}.barcodes.txt", emit: ch_target_barcode
+    tuple path("${target}.barcode.bam"), path("${target}.barcode.bam.bai"), emit: ch_target_bam
 
     script:
     def barcode_opt = ''
@@ -153,7 +154,9 @@ process extract_barcode {
 
     python ${projectDir}/scripts/extract_barcodes.py -i ${target}.barcode.bam -s ${start} -e ${end} -o . ${barcode_opt}
 
-    rm *.bam
-    rm *.fa
+    rm rm ${target}.left.bam ${target}.right.bam ${target}.minus.bam ${target}.plus.bam ${target}.fixmate.bam
+    rm ${target}.right.bam.bai
+    rm *.bed ${target}.left.txt ${target}.right.txt
+    rm ${target}.fa ${target}.fa.fai
     """ 
 }
