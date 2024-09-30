@@ -44,10 +44,10 @@ workflow detect_barcode {
     //ch_target.view()
     
     extract_barcode(ch_target)
-    ch_list = extract_barcode.out.ch_list
+    ch_target_barcode = extract_barcode.out.ch_target_barcode
 
     emit:
-    ch_list
+    ch_target_barcode
 }
 
 /*
