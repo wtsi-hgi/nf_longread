@@ -154,7 +154,7 @@ process extract_barcode {
 
     python ${projectDir}/scripts/extract_barcodes.py -i ${target}.barcode.bam -s ${start} -e ${end} -o . ${barcode_opt}
 
-    rm rm ${target}.left.bam ${target}.right.bam ${target}.minus.bam ${target}.plus.bam ${target}.right.fixmate.bam
+    rm ${target}.left.bam ${target}.right.bam ${target}.minus.bam ${target}.plus.bam ${target}.right.fixmate.bam
     rm ${target}.right.bam.bai
     rm *.bed ${target}.left.txt ${target}.right.txt
     rm ${target}.fa ${target}.fa.fai
