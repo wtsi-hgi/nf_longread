@@ -85,8 +85,7 @@ nextflow run -resume nf_longread/main.nf --sample_sheet $INPUTSAMPLE \
 
 ### Usage options
 ```bash
-Usage:
-    nextflow run check_inputs.nf --sample_sheet "/path/of/sample/sheet"
+nextflow run check_inputs.nf --sample_sheet "/path/of/sample/sheet"
 
     Mandatory arguments:
         --sample_sheet        Path of the sample sheet
@@ -104,6 +103,13 @@ Usage:
     
     Barcode Detection:
         --mapq                the mapping quality for filtering, default: 1
+        --qualcut             the base quality in the barcode for filtering , default: 20
+        --numcut              the number of low-quality bases in the barcode for filtering, default: 3
+        --countcut            the number of reads supporting the barcode for filtering, default: 10
+
+    Extract SNVs:
+        --basequal            the base quality for filtering, default: 30
+        --region              the expected region of variants, eg: 100,200, default: 0,0
 
     Step arguments:
         --skip_align          skip alignment
