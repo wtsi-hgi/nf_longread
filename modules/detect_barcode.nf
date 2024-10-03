@@ -106,6 +106,7 @@ process extract_barcode {
 
     output:
     path "${target}.barcodes.txt", emit: ch_target_barcode
+    path "${target}.sam", emit: ch_target_sam
     tuple path("${target}.barcode.bam"), path("${target}.barcode.bam.bai"), emit: ch_target_bam
 
     script:
@@ -145,8 +146,7 @@ process extract_barcode {
 
     samtools view -bS ${target}.right.sam > ${target}.right.bam
     samtools index ${target}.right.bam
-    
-    rm *.sam
+    rm ${target}.right.sam 
 
     samtools fixmate -O bam ${target}.right.bam ${target}.right.fixmate.bam
     samtools calmd ${target}.right.fixmate.bam ${target}.fa --output-fmt bam > ${target}.barcode.bam
