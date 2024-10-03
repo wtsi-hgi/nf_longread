@@ -31,6 +31,9 @@ def helpMessage() {
     
     Barcode Detection:
         --mapq                the mapping quality for filtering, default: 1
+        --qualcut             the base quality in the barcode for filtering , default: 20
+        --numcut              the number of low-quality bases in the barcode for filtering, default: 3
+        --countcut            the number of reads supporting the barcode for filtering, default: 10
 
     Extract SNVs:
         --basequal            the base quality for filtering, default: 30
@@ -68,6 +71,9 @@ params.protocol     = params.protocol     ?: "DNA"
 params.platform     = params.platform     ?: "nanopore"
 params.model        = params.model        ?: "ont_r10"
 params.mapq         = params.mapq         ?: 1
+params.qualcut      = params.qualcut      ?: 20
+params.numcut       = params.numcut       ?: 3
+params.countcut     = params.countcut     ?: 10
 params.basequal     = params.basequal     ?: 30
 params.region       = params.region       ?: "0,0"
 

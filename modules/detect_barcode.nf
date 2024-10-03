@@ -152,7 +152,7 @@ process extract_barcode {
     samtools calmd ${target}.right.fixmate.bam ${target}.fa --output-fmt bam > ${target}.barcode.bam
     samtools index ${target}.barcode.bam
 
-    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.barcode.bam -s ${start} -e ${end} -o . ${barcode_opt}
+    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.barcode.bam -s ${start} -e ${end} -o . ${barcode_opt} -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut}
 
     rm ${target}.left.bam ${target}.right.bam ${target}.minus.bam ${target}.plus.bam ${target}.right.fixmate.bam
     rm ${target}.right.bam.bai
