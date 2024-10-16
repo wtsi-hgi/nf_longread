@@ -25,6 +25,7 @@ Arguments:
 
 Optional:
 \t-t, --target          target name
+\t-m, --mutant          create exact mutant codons rather than NNN instead, default: False
 
 Flags:
 \t-h, --help            help information
@@ -51,7 +52,7 @@ def get_nnk_codons():
                 nnk_codons.append(n1 + n2 + k)
     return nnk_codons
 
-def generate_mutations(sequence, start, end, mutated_codons):
+def generate_mutations(sequence, start, end, mutated_codons = None):
     mutated_sequences = []
 
     start = max(0, start - 1)
@@ -60,17 +61,27 @@ def generate_mutations(sequence, start, end, mutated_codons):
         print(f"Warning: the end position ({end}) exceeds the length of seqeunce ({len(sequence)})!")
         end = len(sequence)
 
-    for i in range(start, end, 3):
-        if i + 3 <= len(sequence):
-            original_codon = sequence[i:i+3]
-            for mutated_codon in mutated_codons:
-                if mutated_codon != original_codon:   
-                    mutated_sequence = sequence[:i] + mutated_codon + sequence[i+3:]
-                    mutated_sequences.append({
-                        "mutant": mutated_codon,
-                        "sequence": mutated_sequence,
-                        "position": i + 1
-                    })
+    if mutated_codons is None or not mutated_codons:
+        for i in range(start, end, 3):
+            if i + 3 <= len(sequence):
+                mutated_sequence = sequence[:i] + 'NNN' + sequence[i+3:]
+                mutated_sequences.append({
+                            'mutant': 'NNN',
+                            'sequence': mutated_sequence,
+                            'position': i + 1
+                        })
+    else:
+        for i in range(start, end, 3):
+            if i + 3 <= len(sequence):
+                original_codon = sequence[i:i+3]
+                for mutated_codon in mutated_codons:
+                    if mutated_codon != original_codon:   
+                        mutated_sequence = sequence[:i] + mutated_codon + sequence[i+3:]
+                        mutated_sequences.append({
+                            'mutant': mutated_codon,
+                            'sequence': mutated_sequence,
+                            'position': i + 1
+                        })
 
     return mutated_sequences
 
@@ -80,11 +91,12 @@ def generate_mutations(sequence, start, end, mutated_codons):
 
 def main(argvs):
     target = ''
+    create_mutant = False
 
     try:
         opts, args = getopt.getopt(argvs,
-                                   "vhi:s:e:o:t:",
-                                   ["version", "help", "input=", "startpos=", "endpos=", "output=", "target="])
+                                   "vhi:s:e:o:t:m",
+                                   ["version", "help", "input=", "startpos=", "endpos=", "output=", "target=", "mutant"])
         if len(opts) == 0:
             usage_info()
             sys.exit(2)
@@ -109,6 +121,8 @@ def main(argvs):
             outputFile = arg
         elif opt in ("-t", "--target"):
             target = arg
+        elif opt in ("-m", "--mutant"):
+            create_mutant = True
         else:
             assert False, "unhandled option"
 
@@ -131,8 +145,11 @@ def main(argvs):
     if len(sequences) != 1:
         sys.exit("Multiple records are found in the input fasta file! Only one is needed!")
 
-    mutated_codons = get_nnk_codons()
-    mutated_sequences = generate_mutations(sequences[0]["sequence"], startPos, endPos, mutated_codons)
+    if create_mutant:
+        mutated_codons = get_nnk_codons()
+        mutated_sequences = generate_mutations(sequences[0]["sequence"], startPos, endPos, mutated_codons)
+    else:
+        mutated_sequences = generate_mutations(sequences[0]["sequence"], startPos, endPos)
 
     records = []
     for idx, seq in enumerate(mutated_sequences):
