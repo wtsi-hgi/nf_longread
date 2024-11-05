@@ -71,9 +71,9 @@ params.protocol     = params.protocol     ?: "DNA"
 params.platform     = params.platform     ?: "nanopore"
 params.model        = params.model        ?: "ont_r10"
 params.mapq         = params.mapq         ?: 1
-params.qualcut      = params.qualcut      ?: 20
+params.qualcut      = params.qualcut      ?: 10
 params.numcut       = params.numcut       ?: 3
-params.countcut     = params.countcut     ?: 10
+params.countcut     = params.countcut     ?: 5
 params.basequal     = params.basequal     ?: 30
 params.region       = params.region       ?: "0,0"
 

@@ -121,10 +121,42 @@ process extract_barcode {
     }
     
     """
-    samtools view -h -O BAM -o ${target}.bam ${bam} ${target}
-    samtools index ${target}.bam
+    awk '{if(\$1==">${target}"){print \$0; getline; print \$0; exit}}' ${fasta} > ${target}.fa
+    samtools faidx ${target}.fa
 
-    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.bam -s ${start} -e ${end} -o . ${barcode_opt} -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut}
-    
+    echo -e "${target}\\t1\\t\$((${start}-1))\\tleft_barcode\\t60\\t+" > ${target}.left_barcode.bed
+    echo -e "${target}\\t${end}\\t\$((${end}+30))\\tright_barcode\\t60\\t-" > ${target}.right_barcode.bed
+
+    samtools view -h -O SAM -o ${target}.sam ${bam} ${target}
+
+    awk -F'\\t' -v OFS='\\t' '{if(!(\$0~/^@/)){\$2=0}; print \$0}' ${target}.sam | samtools view -bS - > ${target}.plus.bam
+    samtools ampliconclip -b ${target}.left_barcode.bed -o ${target}.left_tmp.bam -f ${target}.left.txt --hard-clip --strand --clipped -O bam --tolerance 1000000 ${target}.plus.bam
+    samtools view -b -h -O BAM -F 4 -o ${target}.left.bam ${target}.left_tmp.bam
+
+    samtools view -h ${target}.left.bam | awk -F'\\t' -v OFS='\\t' '{if(!(\$0~/^@/)){\$2=16}; print \$0}' | samtools view -bS - > ${target}.minus.bam
+    samtools ampliconclip -b ${target}.right_barcode.bed -o ${target}.right_tmp.bam -f ${target}.right.txt --hard-clip --strand --clipped -O bam --tolerance 1000000 ${target}.minus.bam
+    samtools view -b -h -O BAM -F 4 -o ${target}.right.bam ${target}.right_tmp.bam
+
+    samtools view -h -O SAM -o ${target}.right.sam ${target}.right.bam
+    rm ${target}.right.bam
+
+    awk -F'\\t' -v OFS='\\t' 'NR==FNR{if(!(\$0~/^@/)){a[\$1]=\$2};next}{if(!(\$0~/^@/)){\$2=a[\$1]};print \$0}' ${target}.sam ${target}.right.sam > ${target}.right.tmp.sam
+    rm ${target}.right.sam
+    mv ${target}.right.tmp.sam ${target}.right.sam
+
+    samtools view -bS ${target}.right.sam > ${target}.right.bam
+    samtools index ${target}.right.bam
+    rm ${target}.right.sam 
+
+    samtools fixmate -O bam ${target}.right.bam ${target}.right.fixmate.bam
+    samtools calmd ${target}.right.fixmate.bam ${target}.fa --output-fmt bam > ${target}.barcode.bam
+    samtools index ${target}.barcode.bam
+
+    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.barcode.bam -s ${start} -e ${end} -o . ${barcode_opt} -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut}
+
+    rm ${target}.left.bam ${target}.right.bam ${target}.minus.bam ${target}.plus.bam ${target}.right.fixmate.bam
+    rm ${target}.right.bam.bai
+    rm *.bed ${target}.left.txt ${target}.right.txt
+    rm ${target}.fa ${target}.fa.fai
     """ 
 }
