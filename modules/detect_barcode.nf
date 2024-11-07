@@ -106,8 +106,7 @@ process extract_barcode {
 
     output:
     path "${target}.barcodes.txt", emit: ch_target_barcode
-    path "${target}.sam", emit: ch_target_sam
-    tuple path("${target}.barcode.bam"), path("${target}.barcode.bam.bai"), emit: ch_target_bam
+    tuple path("${target}.bam"), path("${target}.bam.bai"), emit: ch_target_bam
 
     script:
     def barcode_opt = ''
@@ -125,6 +124,5 @@ process extract_barcode {
     samtools index ${target}.bam
 
     python ${projectDir}/scripts/extract_barcodes.py -i ${target}.bam -s ${start} -e ${end} -o . ${barcode_opt} -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut}
-    
     """ 
 }
