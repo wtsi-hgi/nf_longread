@@ -51,16 +51,15 @@ process align_reads {
     if (params.protocol == 'DNA') {
         switch (params.platform) {
             case 'nanopore':
-                preset = "-x map-ont"
+                preset = "-x map-ont -O 8,28"
                 break
             case 'pcabio':
-                preset = "-x map-pb"
+                preset = "-x map-pb -O 8,28"
                 break
             case 'hifi':
-                preset = "-x map-hifi"
+                preset = "-x map-hifi -O 8,28"
                 break
         }
-        kmer = "-k 15"
         md = "--MD"
     } else {
         preset = "-x splice"
