@@ -31,9 +31,9 @@ def helpMessage() {
     
     Barcode Detection:
         --mapq                the mapping quality for filtering, default: 1
-        --qualcut             the base quality in the barcode for filtering , default: 20
+        --qualcut             the base quality in the barcode for filtering , default: 10
         --numcut              the number of low-quality bases in the barcode for filtering, default: 3
-        --countcut            the number of reads supporting the barcode for filtering, default: 10
+        --countcut            the number of reads supporting the barcode for filtering, default: 5
 
     Extract SNVs:
         --basequal            the base quality for filtering, default: 30
