@@ -57,7 +57,7 @@ process align_reads {
                 preset = "-x map-pb -O 8,28 -B 2"
                 break
             case 'hifi':
-                preset = "-x map-hifi -O 8,28 -B 2"
+                preset = "-k 19 -w 19 -g 10k -A 2 -B 2 -O 10,30 -E 4,2 -s 200"
                 break
         }
         md = "--MD"
