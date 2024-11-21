@@ -139,6 +139,10 @@ def main(argvs):
                 indexes_G.append(i)
 
     fileName = os.path.basename(inputFile)
+    if "__" not in fileName:
+        print("Not mutant file, skip")
+        sys.exit() 
+
     target = fileName.split('.')[0]
     var_start = int(target.split('__')[1])
     var_positions = [var_start, var_start + 1, var_start + 2]
