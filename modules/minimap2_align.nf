@@ -68,7 +68,7 @@ process align_reads {
     }
 
     """
-    minimap2 -a -t $task.cpus $preset $kmer $stranded $md --secondary=no ${fasta} ${fastq} > ${group}.sam
+    minimap2 -a -t $task.cpus $preset $kmer $stranded $md -N 0 ${fasta} ${fastq} > ${group}.sam
     """
 }
 
