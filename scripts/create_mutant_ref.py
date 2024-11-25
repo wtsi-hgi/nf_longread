@@ -25,11 +25,15 @@ Arguments:
 
 Optional:
 \t-t, --target          target name
-\t-m, --mutant          create exact mutant codons rather than NNN instead, default: False
+\t-m, --mutant          create exact mutant codons rather than CTG instead, default: False
 
 Flags:
 \t-h, --help            help information
 \t-v, --version         version information
+
+Note:
+\t1. create a list of mutant references
+\t2. mutant is always CTG, others can still be aligned by mismatches
 ''' 
 
 ###############
@@ -64,9 +68,9 @@ def generate_mutations(sequence, start, end, mutated_codons = None):
     if mutated_codons is None or not mutated_codons:
         for i in range(start, end, 3):
             if i + 3 <= len(sequence):
-                mutated_sequence = sequence[:i] + 'NNN' + sequence[i+3:]
+                mutated_sequence = sequence[:i] + 'CTG' + sequence[i+3:]
                 mutated_sequences.append({
-                            'mutant': 'NNN',
+                            'mutant': 'CTG',
                             'sequence': mutated_sequence,
                             'position': i + 1
                         })
