@@ -180,7 +180,7 @@ def main(argvs):
         # check barcode quality and variant quality
         barcode_bad_bases = sum(q <= qualCutoff for q in barcode_qualities)
         var_bad_bases = sum(q <= qualCutoff for q in variant_qualities)
-        if barcode_bad_bases > numCutoff or var_bad_bases > 0:
+        if barcode_bad_bases >= numCutoff or var_bad_bases > 0:
             continue
 
         if barcodeTemplate != '':
@@ -189,7 +189,7 @@ def main(argvs):
         var_barcode_list.append((variant_seq, barcode_seq))
 
     var_barcode_counts = Counter(var_barcode_list)
-    var_barcode_counts_filter = {item: count for item, count in var_barcode_counts.items() if count > countCutoff}
+    var_barcode_counts_filter = {item: count for item, count in var_barcode_counts.items() if count >= countCutoff}
 
     with open(outputDir + "/" + target + ".barcodes.txt", 'w') as file:
         for item, count in var_barcode_counts_filter.items():
