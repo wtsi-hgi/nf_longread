@@ -46,7 +46,6 @@ process align_reads {
     def preset = ''
     def kmer = ''
     def stranded = ''
-    def md = ''
 
     if (params.protocol == 'DNA') {
         switch (params.platform) {
@@ -57,10 +56,9 @@ process align_reads {
                 preset = "-x map-pb -O 8,28 -B 2"
                 break
             case 'hifi':
-                preset = "-k 19 -w 19 -g 10k -A 2 -B 2 -O 10,30 -E 4,2 -s 200"
+                preset = "-x map-hifi -A 1 -B 2 -O 12,30 -E 8,4"
                 break
         }
-        md = "--MD"
     } else {
         preset = "-x splice"
         kmer = (params.protocol == 'directRNA') ? "-k 14" : "-k 15"
@@ -68,7 +66,7 @@ process align_reads {
     }
 
     """
-    minimap2 -a -t $task.cpus $preset $kmer $stranded $md --secondary=no ${fasta} ${fastq} > ${group}.sam
+    minimap2 -a -t $task.cpus $preset $kmer $stranded --cs --secondary=no ${fasta} ${fastq} > ${group}.sam
     """
 }
 
