@@ -174,7 +174,15 @@ def main(argvs):
         variant_seq = ''.join(variant_bases)
 
         # check barcode length and variant length
-        if len(barcode_seq) != barcodeLen or len(variant_seq) != len(var_positions):
+        # if len(barcode_seq) != barcodeLen or len(variant_seq) != len(var_positions):
+        #     continue
+
+        # not allow indel in the variant
+        if len(variant_seq) != len(var_positions):
+            continue
+
+        # allow barcode length ranges -1 to +1
+        if len(barcode_seq) > (barcodeLen + 1) or len(barcode_seq) < (barcodeLen - 1):
             continue
 
         # check barcode quality and variant quality
@@ -183,7 +191,7 @@ def main(argvs):
         if barcode_bad_bases >= numCutoff or var_bad_bases > 0:
             continue
 
-        if barcodeTemplate != '':
+        if barcodeTemplate != '' and len(barcode_seq) == barcodeLen:
             barcode_seq = fix_mismatch(barcode_seq, indexes_A, indexes_T, indexes_C, indexes_G)
 
         var_barcode_list.append((variant_seq, barcode_seq))
