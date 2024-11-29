@@ -9,7 +9,7 @@ import re
 import pysam
 from Bio import SeqIO
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 script_name = os.path.basename(__file__)
 
@@ -363,12 +363,10 @@ def main(argvs):
     var_barcode_list = []
     with open(output_pass, 'w') as pass_file, open(output_fail, 'w') as fail_file:
         with ThreadPoolExecutor(max_workers = numThreads) as executor:
-            futures = []
             for read in samobj.fetch(targetID, startPos, endPos):
-                futures.append(executor.submit(process_read, read, targetID, startPos, endPos, geneStart, geneEnd, refSeq,
-                                               qualCutoff, barcodeTemplate, indexes_A, indexes_T, indexes_C, indexes_G, barcodeLen, numCutoff))
-
-            for future in futures:
+                future = executor.submit(process_read, 
+                                         read, targetID, startPos, endPos, geneStart, geneEnd, refSeq, qualCutoff, 
+                                         barcodeTemplate, indexes_A, indexes_T, indexes_C, indexes_G, barcodeLen, numCutoff)
                 result = future.result()
                 if result[-1] == "P":
                     pass_file.write("\t".join(map(str, result[:-1])) + "\n")
