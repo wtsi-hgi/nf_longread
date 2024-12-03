@@ -18,11 +18,17 @@
 
 <!-- Dependencies-->
 ## Dependencies
-samtools
-
-minimap2
-
-clair3
+* nextflow
+* minimap2
+* samtools
+* bamtools
+* python packages
+    - pysam
+    - biopython
+    - numpy
+    - scipy
+    - matplotlib
+    - pandas 
 
 <!-- File Format-->
 ## File Format
@@ -30,11 +36,16 @@ clair3
 <a id="samplesheet"></a>
 
 ### Sample sheet -- csv
-| group | barcode_start | barcode_end | barcode_template | fastq | fasta |
-| - | - | - | - | - | - |
-| barcode_55 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/fastq/directory/55 | /path/of/fasta/reference_55.fa |
-| barcode_56 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/fastq/directory/56 | /path/of/fasta/reference_56.fa | 
-| barcode_57 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/fastq/directory/57 | /path/of/fasta/reference_57.fa | 
+| group | barcode_start | barcode_end | barcode_template | directory | reference | gene_info |
+| - | - | - | - | - | - | - |
+| barcode_55 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/directory/ | ref_55.fa | gene_info_55.txt |
+| barcode_56 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/directory/ | ref_56.fa | gene_info_56.txt |
+| barcode_57 | 1200 | 1237 | NNNNATNNNNATNNNNATNNNNATNNNNATNNNNATNN | /path/of/directory/ | ref_57.fa | gene_info_57.txt |
+
+> [!Note]  
+> 1. Keep the header exactly same with the example
+> 2. For barcode association, you need everything in the field
+> 3. For variant coverer plot, you only need group, directory, reference
 
 <a id="structure"></a>
 
@@ -59,8 +70,7 @@ submit the bash script below
 
 # modules
 module load HGI/common/nextflow/23.10.0
-module load HGI/softpack/groups/team354/nf_longread
-module load HGI/common/clair3
+module load HGI/softpack/users/fs18/nf_longread
 
 #--------------#
 # user specify #
@@ -77,8 +87,9 @@ export OUTPUTRES=$PWD/outputs
 #-----------#
 nextflow run -resume nf_longread/main.nf --sample_sheet $INPUTSAMPLE \
                                          --protocol DNA \
-                                         --platform nanopore \
-                                         --outdir $OUTPUTRES
+                                         --platform hifi \
+                                         --outdir $OUTPUTRES \
+                                         --skip_snvcov
 ```
 
 <a id="options"></a>
@@ -97,10 +108,7 @@ nextflow run check_inputs.nf --sample_sheet "/path/of/sample/sheet"
     Alignment:
         --protocol            DNA, cDNA, directRNA, default: DNA
         --platform            nanopore, pacbio, hifi, default: nanopore
-    
-    Variant Calling:
-        --model               the trainning model of variant calling, default: ont_r10
-    
+
     Barcode Detection:
         --mapq                the mapping quality for filtering, default: 1
         --qualcut             the base quality in the barcode for filtering , default: 10
@@ -113,7 +121,6 @@ nextflow run check_inputs.nf --sample_sheet "/path/of/sample/sheet"
 
     Step arguments:
         --skip_align          skip alignment
-        --skip_variant        skip variant calling
         --skip_barcode        skip barcode detection
         --skip_snvcov         skip snv coverage extraction
 ```
