@@ -46,6 +46,7 @@ process align_reads {
     def preset = ''
     def kmer = ''
     def stranded = ''
+    def tag = ''
 
     if (params.protocol == 'DNA') {
         switch (params.platform) {
@@ -65,8 +66,14 @@ process align_reads {
         stranded = (params.protocol == 'directRNA') ? "-uf" : ""
     }
 
+    if (!params.skip_barcode) {
+        tag = "--cs"
+    } else {
+        tag = "--MD"
+    }
+
     """
-    minimap2 -a -t $task.cpus $preset $kmer $stranded --cs --secondary=no ${fasta} ${fastq} > ${group}.sam
+    minimap2 -a -t $task.cpus $preset $kmer $stranded $tag --secondary=no ${fasta} ${fastq} > ${group}.sam
     """
 }
 
