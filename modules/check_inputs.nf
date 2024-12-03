@@ -18,12 +18,24 @@ workflow check_inputs {
     Channel
         .fromPath(sample_sheet, checkIfExists: true)
         .splitCsv(header:true, sep:",")
-        .map { row -> tuple(row.group, row.fastq, row.fasta) }
-        .set { ch_sample }
+        .map { row -> tuple(row.group, row.directory, row.reference, row.gene_info) }
+        .set { ch_input }
 
-    cat_reads(ch_sample)
-    ch_cat_out = cat_reads.out.cat_out
+    cat_reads(ch_input)
+    ch_sample = cat_reads.out.ch_sample
 
+    ch_sample.flatMap { group, directory, reference, gene_info ->
+                if (!gene_info.exists()) {
+                    throw new RuntimeException("The gene_info file does not exist for group: ${group} (${gene_info})!")
+                }
+
+                gene_info
+                    .readLines()
+                    .collect { line -> 
+                        def fields = line.split('\t')
+                        tuple(group, fields[0], fields[1] as Integer, fields[2] as Integer) } }
+             .set { ch_gene }
+    
     Channel
         .fromPath(sample_sheet, checkIfExists: true)
         .splitCsv(header:true, sep:",")
@@ -32,12 +44,12 @@ workflow check_inputs {
             def barcode_start = row.barcode_start ? row.barcode_start.toInteger() : null
             def barcode_end = row.barcode_end ? row.barcode_end.toInteger() : null
             def barcode_template = row.barcode_template?.toString()
-            tuple(group, barcode_start, barcode_end, barcode_template) 
-        }
+            tuple(group, barcode_start, barcode_end, barcode_template) }
         .set { ch_barcode }
 
     emit:
-    ch_cat_out
+    ch_sample
+    ch_gene
     ch_barcode
 }
 
@@ -53,19 +65,20 @@ process cat_reads {
     publishDir "${params.outdir}/mergedReads", mode: "copy", overwrite: true
 
     input:
-    tuple val(group), val(fastq), val(fasta)
+    tuple val(group), val(directory), val(reference), val(gene_info)
 
     output:
-    tuple val(group), path("${group}.fastq.gz"), path("${group}.ref.fasta"), emit: cat_out
+    tuple val(group), path("${group}.fastq.gz"), path("${group}.ref.fasta"), path("${group}.gene_info.txt"), emit: ch_sample
 
     script:
     """
-    if ls ${fastq}/*.fastq &> /dev/null
+    if ls ${directory}/*.fastq &> /dev/null
     then
-        pigz -9 ${fastq}/*.fastq
+        pigz -9 ${directory}/*.fastq
     fi
 
-    cat ${fastq}/*.fastq.gz > ${group}.fastq.gz
-    cp ${fasta} ${group}.ref.fasta
+    cat ${directory}/*.fastq.gz > ${group}.fastq.gz
+    cp ${directory}/${reference} ${group}.ref.fasta
+    cp ${directory}/${gene_info} ${group}.gene_info.txt
     """
 }
