@@ -13,6 +13,7 @@
 workflow detect_barcode {
     take:
     ch_sample
+    ch_gene
     ch_barcode
     ch_bam
 
@@ -41,9 +42,16 @@ workflow detect_barcode {
     ch_idxstats_flatten = ch_idxstats_list.flatMap { it }
 
     ch_target = ch_sample_bam_barcode.combine(ch_idxstats_flatten, by: 0)
-    //ch_target.view()
+    ch_target_input = ch_target.map { group, fastq, fasta, bam, bai, start, end, template, target, length, reads -> 
+                                    tuple(group, fasta, bam, bai, template, start, end, target) }
+                               .join ( ch_gene.map {group, target, target_start, target_length ->
+                                                 tuple(group, target, target_start, target_length) }, by: ['group', 'target'] )
+                               .map { group, fasta, bam, bai, template, start, end, target, group2, target2, target_start, target_length -> 
+                                    tuple(group, fasta, bam, bai, template, start, end, target, target_start, target_length) }
+
+    ch_target_input.view()
     
-    extract_barcode(ch_target)
+    extract_barcode(ch_target_input)
     ch_target_barcode = extract_barcode.out.ch_target_barcode
 
     emit:
@@ -94,35 +102,41 @@ process samtools_stat {
 }
 
 process extract_barcode {
-    label 'process_single'
+    label 'process_high'
 
     publishDir "${params.outdir}/barcodeList/${group}", mode: "copy", overwrite: true
 
     input:
-    tuple val(group), path(fastq), path(fasta), 
-          path(bam), path(bai), 
-          val(start), val(end), val(sequence),
-          val(target), val(length), val(reads)
+    tuple val(group), path(fasta), path(bam), path(bai), 
+          val(template), val(start), val(end), 
+          val(target), val(target_start), val(target_length)
 
     output:
-    path "${target}.barcodes.txt", emit: ch_target_barcode
+    tuple path("${target}.barcodes_pass.txt"), path("${target}.barcodes_fail.txt"), path("${target}.barcodes_sum.txt"), emit: ch_target_barcode
     tuple path("${target}.bam"), path("${target}.bam.bai"), emit: ch_target_bam
 
     script:
     def barcode_opt = ''
 
-    if (sequence != '') {
-        barcode_opt = "-b ${sequence}"
+    if (template != '') {
+        barcode_opt = "-b ${template}"
     }
 
     if (start == null || start.toString().trim() == "" || end == null || end.toString().trim() == "") {
         throw new IllegalArgumentException("Error: start or end is empty for group: ${group}")
     }
     
+    if (target_start == null || target_start.toString().trim() == "" || target_length == null || target_length.toString().trim() == "") {
+        throw new IllegalArgumentException("Error: start or length is empty for gene: ${target}")
+    }
+
     """
     samtools view -h -O BAM -o ${target}.bam ${bam} ${target}
     samtools index ${target}.bam
 
-    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.bam -s ${start} -e ${end} -o . ${barcode_opt} -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut}
+    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.bam -o . \
+                                                     -s ${start} -e ${end} ${barcode_opt} \
+                                                     -g ${target_start} -l ${target_length} -f ${fasta} \
+                                                     -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut} -t $task.cpus
     """ 
 }
