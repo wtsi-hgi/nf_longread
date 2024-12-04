@@ -48,7 +48,6 @@ workflow detect_barcode {
                                                  tuple(group, target, target_start, target_length) }, by: ['group', 'target'] )
                                .map { group, fasta, bam, bai, template, start, end, target, group2, target2, target_start, target_length -> 
                                     tuple(group, fasta, bam, bai, template, start, end, target, target_start, target_length) }
-
     ch_target_input.view()
     
     extract_barcode(ch_target_input)
