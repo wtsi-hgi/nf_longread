@@ -42,12 +42,15 @@ workflow detect_barcode {
     ch_idxstats_flatten = ch_idxstats_list.flatMap { it }
 
     ch_target = ch_sample_bam_barcode.combine(ch_idxstats_flatten, by: 0)
-    ch_target_input = ch_target.map { group, fastq, fasta, bam, bai, start, end, template, target, length, reads -> 
-                                    tuple(group, fasta, bam, bai, template, start, end, target) }
-                               .join ( ch_gene.map {group, target, target_start, target_length ->
-                                                 tuple(group, target, target_start, target_length) }, by: ['group', 'target'] )
-                               .map { group, fasta, bam, bai, template, start, end, target, group2, target2, target_start, target_length -> 
-                                    tuple(group, fasta, bam, bai, template, start, end, target, target_start, target_length) }
+    ch_target_index = ch_target.map { group, fastq, fasta, bam, bai, start, end, template, target, length, reads -> 
+                                    def index = "${group}__${target}"
+                                    tuple(index, group, fasta, bam, bai, template, start, end, target) }
+    ch_gene_index = ch_gene.map {group, target, target_start, target_length ->
+                                def index = "${group}__${target}"
+                                tuple(index, target_start, target_length) }
+
+    ch_target_input = ch_target_index.join(ch_gene_index)
+                                     .map { tuple ->  tuple.drop(1) }
     ch_target_input.view()
     
     extract_barcode(ch_target_input)
