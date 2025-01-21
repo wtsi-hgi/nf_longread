@@ -13,7 +13,7 @@
 def helpMessage() {
     log.info """
     Usage:
-    nextflow run check_inputs.nf --sample_sheet "/path/of/sample/sheet"
+    nextflow run nf_longread/main.nf --sample_sheet "/path/of/sample/sheet"
 
     Mandatory arguments:
         --sample_sheet        Path of the sample sheet
