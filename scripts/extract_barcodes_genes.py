@@ -182,6 +182,12 @@ def process_read(read, targetID, startPos, endPos, geneStart, geneEnd, refSeq, q
     if read.reference_start > geneStart and read.reference_end < geneEnd:
         return(read.query_name, "no barcode", "read clipped", "F")
 
+    # Note: not perfect
+    # Reason: reads can be still aligned with mismatches to the target genes
+    # Solution: need the full references with all the variants
+    # But: too many references, not sure if it is a problem to process
+    # Consider: need to examine reads with low mismatches in the gene regions
+
     #-------------------#
     # barcode detection #
     #-------------------#

@@ -114,8 +114,9 @@ process extract_barcode {
           val(target), val(target_start), val(target_length)
 
     output:
-    tuple path("${target}.barcodes_pass.txt"), path("${target}.barcodes_fail.txt"), path("${target}.barcodes_sum.txt"), emit: ch_target_barcode
     tuple path("${target}.bam"), path("${target}.bam.bai"), emit: ch_target_bam
+    tuple path("${target}.barcodes_pass.txt"), path("${target}.barcodes_fail.txt"), emit: ch_target_barcode
+    tuple path("${target}.barcodes_sum.txt"), emit: ch_target_barcode_sum, optional: true
 
     script:
     def barcode_opt = ''
