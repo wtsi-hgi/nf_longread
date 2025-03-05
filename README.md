@@ -125,6 +125,7 @@ nextflow run nf_longread/main.nf --sample_sheet "/path/of/sample/sheet"
         --platform            nanopore, pacbio, hifi, default: nanopore
 
     Barcode Detection:
+        --libtype             the type of library, muta or gene, default: muta
         --mapq                the mapping quality for filtering, default: 1
         --qualcut             the base quality in the barcode for filtering , default: 10
         --numcut              the number of low-quality bases in the barcode for filtering, default: 3

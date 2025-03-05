@@ -62,16 +62,25 @@ if (params.sample_sheet) {
     exit 1
 }
 
+/* output options */
 params.outdir       = params.outdir       ?: "$PWD"
+
+/* platform options */
 params.protocol     = params.protocol     ?: "DNA"
 params.platform     = params.platform     ?: "nanopore"
+
+/* barcode detection options */
+params.libtype      = params.libtype      ?: "muta"
 params.mapq         = params.mapq         ?: 1
 params.qualcut      = params.qualcut      ?: 10
 params.numcut       = params.numcut       ?: 3
 params.countcut     = params.countcut     ?: 5
+
+/* snv plot options */
 params.basequal     = params.basequal     ?: 30
 params.region       = params.region       ?: "0,0"
 
+/* step options */
 params.skip_align   = params.skip_align   ?: false
 params.skip_barcode = params.skip_barcode ?: false
 params.skip_snvcov  = params.skip_snvcov  ?: false
@@ -82,6 +91,10 @@ if (params.protocol != 'DNA' && params.protocol != 'cDNA' && params.protocol != 
 
 if (params.platform != 'nanopore' && params.platform != 'pacbio' && params.platform != 'hifi') {
     exit 1, "Invalid protocol option: ${params.platform}. Valid options: 'nanopore', 'pacbio', 'hifi'"
+}
+
+if (params.libtype != 'muta' && params.libtype != 'gene') {
+    exit 1, "Invalid protocol option: ${params.libtype}. Valid options: 'muta', 'gene'"
 }
 
 if (!params.skip_barcode) {

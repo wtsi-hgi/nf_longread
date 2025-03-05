@@ -132,13 +132,25 @@ process extract_barcode {
         throw new IllegalArgumentException("Error: start or length is empty for gene: ${target}")
     }
 
-    """
-    samtools view -h -O BAM -o ${target}.bam ${bam} ${target}
-    samtools index ${target}.bam
+    if (params.libtype == "muta") {
+        """
+        samtools view -h -O BAM -o ${target}.bam ${bam} ${target}
+        samtools index ${target}.bam
 
-    python ${projectDir}/scripts/extract_barcodes.py -i ${target}.bam -o . \
-                                                     -s ${start} -e ${end} ${barcode_opt} \
-                                                     -g ${target_start} -l ${target_length} -f ${fasta} \
-                                                     -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut} -t $task.cpus
-    """ 
+        python ${projectDir}/scripts/extract_barcodes.py -i ${target}.bam -o . \
+                                                         -s ${start} -e ${end} ${barcode_opt} \
+                                                         -g ${target_start} -l ${target_length} -f ${fasta} \
+                                                         -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut} -t $task.cpus
+        """ 
+    } else {
+        """
+        samtools view -h -O BAM -o ${target}.bam ${bam} ${target}
+        samtools index ${target}.bam
+
+        python ${projectDir}/scripts/extract_barcodes_genes.py -i ${target}.bam -o . \
+                                                               -s ${start} -e ${end} ${barcode_opt} \
+                                                               -g ${target_start} -l ${target_length} -f ${fasta} \
+                                                               -q ${params.qualcut} -n ${params.numcut} -c ${params.countcut} -t $task.cpus
+        """ 
+    }
 }

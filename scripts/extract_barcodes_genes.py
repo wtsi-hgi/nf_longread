@@ -173,8 +173,14 @@ def parse_cs(read_obj: pysam.AlignedSegment, gene_start: int, gene_end: int, ref
 
 # multi-threading processing reads
 def process_read(read, targetID, startPos, endPos, geneStart, geneEnd, refSeq, qualCutoff, barcodeTemplate, indexes_A, indexes_T, indexes_C, indexes_G, barcodeLen, numCutoff):
+    #---------------------------#
+    # read alignment validation #
+    #---------------------------#
     if read.is_unmapped:
         return(read.query_name, "no barcode", "read unmapped", "F")
+
+    if read.reference_start > geneStart and read.reference_end < geneEnd:
+        return(read.query_name, "no barcode", "read clipped", "F")
 
     #-------------------#
     # barcode detection #
@@ -214,22 +220,7 @@ def process_read(read, targetID, startPos, endPos, geneStart, geneEnd, refSeq, q
     if barcodeTemplate != '' and len(barcode_seq) == barcodeLen:
         barcode_seq = fix_mismatch(barcode_seq, indexes_A, indexes_T, indexes_C, indexes_G)
 
-    #-------------------#
-    # variant detection #
-    #-------------------#
-    substitution_list = []
-    insertion_list = []
-    deletion_list = []
-    mutant_seq = ''
-
-    # get variant sequence and base qualities
-    substitution_list, insertion_list, deletion_list, mutant_seq = parse_cs(read, geneStart, geneEnd, refSeq, qualCutoff)
-
-    substitution_str = "NA" if len(substitution_list) == 0 else ";".join(substitution_list)
-    insertion_str = "NA" if len(insertion_list) == 0 else ";".join(insertion_list)
-    deletion_str = "NA" if len(deletion_list) == 0 else ";".join(deletion_list)
-
-    return(read.query_name, barcode_seq, substitution_str, insertion_str, deletion_str, mutant_seq, "P")
+    return(read.query_name, barcode_seq, targetID, "P")
 
 # Fix the mismatch in the barcode sequence by template sequence
 # Parameters:
@@ -374,64 +365,6 @@ def main(argvs):
                         var_barcode_list.append((result[1], result[2]))
                 else:
                     fail_file.write("\t".join(map(str, result[:-1])) + "\n")
-
-    #----------------------------------------#
-    # summarise the barcodes and variants    #
-    # 1. create WT sequence                  #
-    # 2. replace WT sequence by each variant #
-    #----------------------------------------#
-    codon_dict = {i: refSeq[i-1:i+2] for i in range(geneStart, geneEnd, 3)}
-
-    bar_pos_var = []
-    for bar, var in var_barcode_list:
-        mutations = var.split(';')
-
-        codon_str = ''
-        codon_key = None
-        for mutation in mutations:
-            pos, _, alt, _ = mutation.split(':')
-            pos = int(pos)
-            check_index = (pos - geneStart + 1) % 3
-            match check_index:
-                case 1:
-                    if codon_key is None:
-                        codon_key = pos
-                        codon_str = replace_base(codon_dict[codon_key], check_index, alt)
-                    else:
-                        bar_pos_var.append((bar, codon_key, codon_str.upper()))
-                        codon_key = pos
-                        codon_str = replace_base(codon_dict[codon_key], check_index, alt)
-                case 2:
-                    if codon_key is None:
-                        codon_key = pos - 1
-                        codon_str = replace_base(codon_dict[codon_key], check_index, alt)
-                    else:
-                        if codon_key == pos - 1:
-                            codon_str = replace_base(codon_str, check_index, alt)
-                        else:
-                            bar_pos_var.append((bar, codon_key, codon_str.upper()))
-                            codon_key = pos - 1
-                            codon_str = replace_base(codon_dict[codon_key], check_index, alt)
-                case 0:
-                    if codon_key is None:
-                        codon_key = pos - 2
-                        codon_str = replace_base(codon_dict[codon_key], check_index, alt)
-                    else:                        
-                        if codon_key == pos - 2:
-                            codon_str = replace_base(codon_str, check_index, alt)
-                        else:
-                            bar_pos_var.append((bar, codon_key, codon_str.upper()))
-                            codon_key = pos - 2
-                            codon_str = replace_base(codon_dict[codon_key], check_index, alt)
-        # last one
-        bar_pos_var.append((bar, pos, codon_str.upper()))
-
-    bar_pos_var_counts = Counter(bar_pos_var)
-    bar_pos_var_counts_filter = {item: count for item, count in bar_pos_var_counts.items() if count >= countCutoff}
-
-    with open(outputDir + "/" + targetID + ".barcodes_sum.txt", 'w') as sum_file:
-        for item, count in bar_pos_var_counts_filter.items():
-            sum_file.write(f"{targetID}\t{item[0]}\t{item[1]}\t{item[2]}\t{count}\n")
 
 ###############
 # program run #
